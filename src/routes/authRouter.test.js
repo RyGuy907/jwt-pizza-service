@@ -47,3 +47,15 @@ test('get menu', async () => {
   expect(menu.status).toBe(200);
   expect(menu.body).toBeInstanceOf(Array);
 });
+
+test('login bad', async () => {
+  const badUser = { name: randomName(), email: 'test@user.com', password: 'test' };
+  const unauthorizedUser = await request(app).put('/api/auth').send(badUser);
+  expect(unauthorizedUser.status).not.toBe(200);
+});
+
+test('logout', async () => {
+    const logoutGood = await request(app).delete('/api/auth/').set('Authorization', `Bearer ${testUserAuthToken}`);
+    expect(logoutGood.status).toBe(200);
+    expect(logoutGood.body.message).toBe('logout successful');
+});
