@@ -35,3 +35,15 @@ test('bad register', async () => {
   expect(registerBad.status).toBe(400);
   expect(registerBad.body.message).toBe('name, email, and password are required');
 });
+
+test('get menu', async () => {
+  const login = await request(app).put('/api/auth').send(testUser);
+  expect(login.status).toBe(200);
+  expectValidJwt(login.body.token);
+  const goodUser = { ...testUser, roles: [{ role: 'diner' }] };
+  delete goodUser.password;
+  expect(login.body.user).toMatchObject(goodUser);
+  const menu = await request(app).get('/api/order/menu/');
+  expect(menu.status).toBe(200);
+  expect(menu.body).toBeInstanceOf(Array);
+});
