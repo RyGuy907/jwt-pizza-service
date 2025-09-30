@@ -84,3 +84,21 @@ test('delete store bad', async () => {
   expect(test.status).toBe(403);
   expect(test.body.message).toBe('unable to delete a store');
 });
+
+test('get franchises', async () => {
+  const franchises = await request(app).get('/api/franchise?page=0&limit=10&name=*');
+  expect(franchises.status).toBe(200);
+  expect(franchises.body).toHaveProperty('franchises');
+});
+
+test('franchise by ID', async () => {
+  const test = await request(app).get(`/api/franchise/${testAdminId}`).set('Authorization', `Bearer ${testAdminAuthToken}`);
+  expect(test.status).toBe(200);
+  expect(test.body[0]).toHaveProperty('name');
+});
+
+test('delete franchise', async () => {
+  const test = await request(app).delete(`/api/franchise/${testFranchiseId}`).set('Authorization', `Bearer ${testAdminAuthToken}`);
+  expect(test.status).toBe(200);
+  expect(test.body.message).toBe('franchise deleted');
+});
