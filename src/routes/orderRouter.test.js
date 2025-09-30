@@ -4,7 +4,6 @@ const { Role, DB } = require('../database/database.js');
 
 let testAdminAuthToken;
 let testFranchiseId;
-let testStoreId;
 
 beforeAll(async () => {
   const admin = await createAdminUser();
@@ -21,7 +20,6 @@ beforeAll(async () => {
   const testStore = { franchiseId: testFranchiseId, name: randomName() };
   const createStore = await request(app).post(`/api/franchise/${testFranchiseId}/store`).set('Authorization', `Bearer ${testAdminAuthToken}`).send(testStore);
   expect(createStore.status).toBe(200);
-  testStoreId = createStore.body.id;
 });
 
 function expectValidJwt(potentialJwt) {
