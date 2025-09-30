@@ -71,3 +71,16 @@ test('create store bad', async () => {
   expect(test.status).toBe(403);
   expect(test.body.message).toBe('unable to create a store');
 });
+
+test('delete store', async () => {
+  const test = await request(app).delete(`/api/franchise/${testFranchiseId}/store/${testStoreId}`).set('Authorization', `Bearer ${testAdminAuthToken}`);
+  expect(test.status).toBe(200);
+  expect(test.body.message).toBe('store deleted');
+});
+
+test('delete store bad', async () => {
+  const test = await request(app).delete(`/api/franchise/${testFranchiseId}/store/${testStoreId}`).set('Authorization', `Bearer ${testUserAuthToken}`);
+  expect(test.status).not.toBe(200);
+  expect(test.status).toBe(403);
+  expect(test.body.message).toBe('unable to delete a store');
+});
