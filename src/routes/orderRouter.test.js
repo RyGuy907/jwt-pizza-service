@@ -41,3 +41,15 @@ async function createAdminUser() {
 function randomName() {
   return Math.random().toString(36).substring(2, 12);
 }
+
+test('get menu', async () => {
+  const test = await request(app).get('/api/order/menu/');
+  expect(test.status).toBe(200);
+  expect(test.body).toBeInstanceOf(Array);
+});
+
+test('get order', async () => {
+  const test = await request(app).get('/api/order').set('Authorization', `Bearer ${testAdminAuthToken}`);
+  expect(test.status).toBe(200);
+  expect(test.body).toHaveProperty('dinerId');
+});
