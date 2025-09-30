@@ -53,3 +53,10 @@ test('get order', async () => {
   expect(test.status).toBe(200);
   expect(test.body).toHaveProperty('dinerId');
 });
+
+test('add item', async () => {
+  const item = {title: 'test item', description: 'best', image: 'best.png', price: 30.0};
+  const test = await request(app).put('/api/order/menu').set('Authorization', `Bearer ${testAdminAuthToken}`).send(item);
+  expect(test.status).toBe(200);
+  expect(test.body).toBeInstanceOf(Array);
+});
