@@ -55,3 +55,19 @@ async function createAdminUser() {
 function randomName() {
   return Math.random().toString(36).substring(2, 12);
 }
+
+test('create store', async () => {
+  const store = { franchiseId: testFranchiseId, name: randomName() };
+  const test = await request(app).post(`/api/franchise/${testFranchiseId}/store`).set('Authorization', `Bearer ${testAdminAuthToken}`).send(store);
+  expect(test.status).toBe(200);
+  expect(test.body).toHaveProperty('name');
+  testStoreId = test.body.id;
+});
+
+test('create store bad', async () => {
+  const testStoreBad = { franchiseId: testFranchiseId, name: randomName() };
+  const test = await request(app).post(`/api/franchise/${testFranchiseId}/store`).set('Authorization', `Bearer ${testUserAuthToken}`).send(testStoreBad);
+  expect(test.status).not.toBe(200);
+  expect(test.status).toBe(403);
+  expect(test.body.message).toBe('unable to create a store');
+});
