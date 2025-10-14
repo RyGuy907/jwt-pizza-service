@@ -24,7 +24,6 @@ userRouter.docs = [
   },
 ];
 
-// getUser
 userRouter.get(
   '/me',
   authRouter.authenticateToken,
@@ -33,7 +32,6 @@ userRouter.get(
   })
 );
 
-// updateUser
 userRouter.put(
   '/:userId',
   authRouter.authenticateToken,
@@ -48,6 +46,30 @@ userRouter.put(
     const updatedUser = await DB.updateUser(userId, name, email, password);
     const auth = await setAuth(updatedUser);
     res.json({ user: updatedUser, token: auth });
+  })
+);
+
+userRouter.delete(
+  '/:userId',
+  authRouter.authenticateToken,
+  asyncHandler(async (req, res) => {
+    if (!req.user.isRole(Role.Admin)) {
+      return res.status(403).json({ message: 'unauthorized' });
+    }
+  const userId = Number(req.params.userId);
+  await DB.deleteUser(userId);
+    res.json({ message: 'user deleted' });
+  })
+);
+userRouter.get(
+  '/',
+  authRouter.authenticateToken,
+  asyncHandler(async (req, res) => {
+    if (!req.user.isRole(Role.Admin)) {
+      return res.status(403).json({ message: 'unauthorized' });
+    }
+    const [users, more] = await DB.listUsers(req.query.page, req.query.limit, req.query.name);
+    res.json({ users, more});
   })
 );
 
