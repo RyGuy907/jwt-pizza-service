@@ -105,11 +105,6 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-      - name: Ensure ECR repository exists
-        env:
-          ECR_REPOSITORY: jwt-pizza-service
-        run: |
-          aws ecr describe-repositories --repository-names "$ECR_REPOSITORY" >/dev/null 2>&1 || aws ecr create-repository --repository-name "$ECR_REPOSITORY" >/dev/null
       - name: Set up machine emulation
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker build
