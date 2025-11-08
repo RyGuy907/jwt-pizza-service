@@ -11,15 +11,36 @@ franchiseRouter.docs = [
     path: '/api/franchise?page=0&limit=10&name=*',
     description: 'List all the franchises',
     example: `curl localhost:3000/api/franchise&page=0&limit=10&name=pizzaPocket`,
-    response: { franchises: [{ id: 1, name: 'pizzaPocket', admins: [{ id: 4, name: 'pizza franchisee', email: 'f@jwt.com' }], stores: [{ id: 1, name: 'SLC', totalRevenue: 0 }] }], more: true },
+    response: {
+      franchises: [
+        {
+          id: 1,
+          name: 'pizzaPocket',
+          admins: [
+            { id: 4, name: 'pizza franchisee', email: 'f@jwt.com' },
+          ],
+          stores: [{ id: 1, name: 'SLC', totalRevenue: 0 }],
+        },
+      ],
+      more: true,
+    },
   },
   {
     method: 'GET',
     path: '/api/franchise/:userId',
     requiresAuth: true,
     description: `List a user's franchises`,
-    example: `curl localhost:3000/api/franchise/4  -H 'Authorization: Bearer tttttt'`,
-    response: [{ id: 2, name: 'pizzaPocket', admins: [{ id: 4, name: 'pizza franchisee', email: 'f@jwt.com' }], stores: [{ id: 4, name: 'SLC', totalRevenue: 0 }] }],
+    example: `curl localhost:3000/api/franchise/4 -H 'Authorization: Bearer tttttt'`,
+    response: [
+      {
+        id: 2,
+        name: 'pizzaPocket',
+        admins: [
+          { id: 4, name: 'pizza franchisee', email: 'f@jwt.com' },
+        ],
+        stores: [{ id: 4, name: 'SLC', totalRevenue: 0 }],
+      },
+    ],
   },
   {
     method: 'POST',
@@ -27,13 +48,19 @@ franchiseRouter.docs = [
     requiresAuth: true,
     description: 'Create a new franchise',
     example: `curl -X POST localhost:3000/api/franchise -H 'Content-Type: application/json' -H 'Authorization: Bearer tttttt' -d '{"name": "pizzaPocket", "admins": [{"email": "f@jwt.com"}]}'`,
-    response: { name: 'pizzaPocket', admins: [{ email: 'f@jwt.com', id: 4, name: 'pizza franchisee' }], id: 1 },
+    response: {
+      name: 'pizzaPocket',
+      admins: [
+        { email: 'f@jwt.com', id: 4, name: 'pizza franchisee' },
+      ],
+      id: 1,
+    },
   },
   {
     method: 'DELETE',
     path: '/api/franchise/:franchiseId',
     requiresAuth: true,
-    description: `Delete a franchises`,
+    description: `Delete a franchise`,
     example: `curl -X DELETE localhost:3000/api/franchise/1 -H 'Authorization: Bearer tttttt'`,
     response: { message: 'franchise deleted' },
   },
@@ -50,27 +77,33 @@ franchiseRouter.docs = [
     path: '/api/franchise/:franchiseId/store/:storeId',
     requiresAuth: true,
     description: `Delete a store`,
-    example: `curl -X DELETE localhost:3000/api/franchise/1/store/1  -H 'Authorization: Bearer tttttt'`,
+    example: `curl -X DELETE localhost:3000/api/franchise/1/store/1 -H 'Authorization: Bearer tttttt'`,
     response: { message: 'store deleted' },
   },
 ];
 
-// getFranchises
+// List franchises
 franchiseRouter.get(
   '/',
   asyncHandler(async (req, res) => {
-    const [franchises, more] = await DB.getFranchises(req.user, req.query.page, req.query.limit, req.query.name);
+    const [franchises, more] = await DB.getFranchises(
+      req.user,
+      req.query.page,
+      req.query.limit,
+      req.query.name
+    );
     res.json({ franchises, more });
   })
 );
 
-// getUserFranchises
+// List franchises for a specific user
 franchiseRouter.get(
   '/:userId',
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
     let result = [];
     const userId = Number(req.params.userId);
+
     if (req.user.id === userId || req.user.isRole(Role.Admin)) {
       result = await DB.getUserFranchises(userId);
     }
@@ -79,7 +112,7 @@ franchiseRouter.get(
   })
 );
 
-// createFranchise
+// Create franchise
 franchiseRouter.post(
   '/',
   authRouter.authenticateToken,
@@ -89,13 +122,15 @@ franchiseRouter.post(
     }
 
     const franchise = req.body;
-    res.send(await DB.createFranchise(franchise));
+    const created = await DB.createFranchise(franchise);
+    res.send(created);
   })
 );
 
-// deleteFranchise
+// Delete franchise
 franchiseRouter.delete(
   '/:franchiseId',
+  authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
     const franchiseId = Number(req.params.franchiseId);
     await DB.deleteFranchise(franchiseId);
@@ -103,33 +138,46 @@ franchiseRouter.delete(
   })
 );
 
-// createStore
+// Create store
 franchiseRouter.post(
   '/:franchiseId/store',
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
     const franchiseId = Number(req.params.franchiseId);
     const franchise = await DB.getFranchise({ id: franchiseId });
-    if (!franchise || (!req.user.isRole(Role.Admin) && !franchise.admins.some((admin) => admin.id === req.user.id))) {
+
+    const canManage =
+      franchise &&
+      (req.user.isRole(Role.Admin) ||
+        franchise.admins.some((admin) => admin.id === req.user.id));
+
+    if (!canManage) {
       throw new StatusCodeError('unable to create a store', 403);
     }
 
-    res.send(await DB.createStore(franchise.id, req.body));
+    const store = await DB.createStore(franchise.id, req.body);
+    res.send(store);
   })
 );
 
-// deleteStore
+// Delete store
 franchiseRouter.delete(
   '/:franchiseId/store/:storeId',
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
     const franchiseId = Number(req.params.franchiseId);
+    const storeId = Number(req.params.storeId);
     const franchise = await DB.getFranchise({ id: franchiseId });
-    if (!franchise || (!req.user.isRole(Role.Admin) && !franchise.admins.some((admin) => admin.id === req.user.id))) {
+
+    const canManage =
+      franchise &&
+      (req.user.isRole(Role.Admin) ||
+        franchise.admins.some((admin) => admin.id === req.user.id));
+
+    if (!canManage) {
       throw new StatusCodeError('unable to delete a store', 403);
     }
 
-    const storeId = Number(req.params.storeId);
     await DB.deleteStore(franchiseId, storeId);
     res.json({ message: 'store deleted' });
   })
