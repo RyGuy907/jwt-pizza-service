@@ -57,7 +57,8 @@ app.use('*', (req, res) => {
   });
 });
 
-app.use((err, req, res) => {
+app.use((err, req, res, next) => {
+
   if (logger.logError) {
     logger.logError(err, {
       method: req.method,
@@ -69,6 +70,9 @@ app.use((err, req, res) => {
   res.status(err.statusCode || 500).json({
     message: err.statusCode ? err.message : 'Internal server error',
   });
+});
+
+app.use((err, req, res, next) => {
 });
 
 module.exports = app;
