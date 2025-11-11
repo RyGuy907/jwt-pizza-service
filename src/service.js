@@ -11,8 +11,8 @@ const app = express();
 app.use(express.json());
 app.use(logger.httpLogger);
 app.use(setAuthUser);
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+app.use((_req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -57,12 +57,11 @@ app.use('*', (req, res) => {
   });
 });
 
-app.use((err, req, res, next) => {
-
+app.use((err, _req, res, _next) => {
   if (logger.logError) {
     logger.logError(err, {
-      method: req.method,
-      path: req.originalUrl || req.url,
+      method: _req.method,
+      path: _req.originalUrl || _req.url,
       statusCode: err.statusCode || 500,
     });
   }
@@ -70,9 +69,6 @@ app.use((err, req, res, next) => {
   res.status(err.statusCode || 500).json({
     message: err.statusCode ? err.message : 'Internal server error',
   });
-});
-
-app.use((err, req, res, next) => {
 });
 
 module.exports = app;
