@@ -8,7 +8,6 @@ const config = require('./config.js');
 const metrics = require('./metrics');
 const logger = require('./logger');
 const app = express();
-// let throwaway;
 app.use(express.json());
 app.use(logger.httpLogger);
 app.use(setAuthUser);
@@ -58,13 +57,13 @@ app.use('*', (req, res) => {
   });
 });
 
-app.use((err, _req, res) => {
-  // throwaway = _next;
+app.use((err, req, res, next) => {
+  void next;
 
   if (logger.logError) {
     logger.logError(err, {
-      method: _req.method,
-      path: _req.originalUrl || _req.url,
+      method: req.method,
+      path: req.originalUrl || req.url,
       statusCode: err.statusCode || 500,
     });
   }
