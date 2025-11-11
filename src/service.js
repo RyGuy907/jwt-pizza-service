@@ -57,7 +57,7 @@ app.use('*', (req, res) => {
   });
 });
 
-app.use((err, req, res, next) => {
+app.use((err, req, res) => {
   if (logger.logError) {
     logger.logError(err, {
       method: req.method,
