@@ -58,8 +58,9 @@ app.use('*', (req, res) => {
   });
 });
 
-app.use((err, _req, res, _next) => {
-  throwaway = _next;
+app.use((err, _req, res) => {
+  // throwaway = _next;
+
   if (logger.logError) {
     logger.logError(err, {
       method: _req.method,
