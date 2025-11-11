@@ -8,6 +8,7 @@ const config = require('./config.js');
 const metrics = require('./metrics');
 const logger = require('./logger');
 const app = express();
+let throwaway;
 app.use(express.json());
 app.use(logger.httpLogger);
 app.use(setAuthUser);
