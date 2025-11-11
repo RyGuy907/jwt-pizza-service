@@ -5,16 +5,12 @@ const franchiseRouter = require('./routes/franchiseRouter.js');
 const userRouter = require('./routes/userRouter.js');
 const version = require('./version.json');
 const config = require('./config.js');
-const metrics = require('./metrics'); // ⬅️ add this
-
+const metrics = require('./metrics');
+const logger = require('./logger');
 const app = express();
-
 app.use(express.json());
-
-// Attach user info from JWT first so metrics can see req.user
+app.use(logger.httpLogger);
 app.use(setAuthUser);
-
-// Global CORS
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
@@ -23,10 +19,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Metrics middleware: track every request + latency + methods
-app.use(metrics.requestTracker); // ⬅️ required for HTTP + latency metrics
-
-// API routes
+app.use(metrics.requestTracker);
 const apiRouter = express.Router();
 app.use('/api', apiRouter);
 
@@ -51,7 +44,6 @@ apiRouter.use('/docs', (req, res) => {
   });
 });
 
-// Root
 app.get('/', (req, res) => {
   res.json({
     message: 'welcome to JWT Pizza',
@@ -59,20 +51,24 @@ app.get('/', (req, res) => {
   });
 });
 
-// 404
 app.use('*', (req, res) => {
   res.status(404).json({
     message: 'unknown endpoint',
   });
 });
 
-// Error handler
 app.use((err, req, res, next) => {
-  res.status(err.statusCode ?? 500).json({
-    message: err.message,
-    stack: err.stack,
+  if (logger.logError) {
+    logger.logError(err, {
+      method: req.method,
+      path: req.originalUrl || req.url,
+      statusCode: err.statusCode || 500,
+    });
+  }
+
+  res.status(err.statusCode || 500).json({
+    message: err.statusCode ? err.message : 'Internal server error',
   });
-  next();
 });
 
 module.exports = app;

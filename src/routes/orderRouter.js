@@ -4,6 +4,7 @@ const { Role, DB } = require('../database/database.js');
 const { authRouter } = require('./authRouter.js');
 const { asyncHandler, StatusCodeError } = require('../endpointHelper.js');
 const metrics = require('../metrics');
+const logger = require('../logger');
 
 const orderRouter = express.Router();
 
@@ -84,7 +85,6 @@ orderRouter.docs = [
   },
 ];
 
-// Get menu
 orderRouter.get(
   '/menu',
   asyncHandler(async (req, res) => {
@@ -93,7 +93,6 @@ orderRouter.get(
   })
 );
 
-// Add menu item
 orderRouter.put(
   '/menu',
   authRouter.authenticateToken,
@@ -109,7 +108,6 @@ orderRouter.put(
   })
 );
 
-// Get orders for authenticated user
 orderRouter.get(
   '/',
   authRouter.authenticateToken,
@@ -119,7 +117,6 @@ orderRouter.get(
   })
 );
 
-// Create order 
 orderRouter.post(
   '/',
   authRouter.authenticateToken,
@@ -136,9 +133,19 @@ orderRouter.post(
       order,
     };
 
+    const factoryUrl = `${config.factory.url}/api/order`;
+
+    if (logger.logFactory) {
+      logger.logFactory({
+        type: 'factory_request',
+        url: factoryUrl,
+        body: factoryPayload,
+      });
+    }
+
     const start = Date.now();
 
-    const r = await fetch(`${config.factory.url}/api/order`, {
+    const r = await fetch(factoryUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -149,6 +156,18 @@ orderRouter.post(
 
     const latency = Date.now() - start;
     const j = await r.json().catch(() => ({}));
+
+    if (logger.logFactory) {
+      logger.logFactory({
+        type: 'factory_response',
+        url: factoryUrl,
+        status: r.status,
+        ok: r.ok,
+        body: j,
+        latencyMs: latency,
+      });
+    }
+
     if (r.ok) {
       const totalPrice = Array.isArray(order.items)
         ? order.items.reduce(
@@ -156,6 +175,7 @@ orderRouter.post(
             0
           )
         : 0;
+
       metrics.pizzaPurchase(true, latency, totalPrice);
 
       res.send({
