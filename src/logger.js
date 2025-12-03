@@ -2,18 +2,6 @@ const fetch = require('node-fetch');
 const { logging: config } = require('./config');
 
 
-async function send(level, type, details = {}) {
-  console.log('[LOGGER] send called', { level, type });
-
-  if (!config || !config.url || !config.userId || !config.apiKey) {
-    console.log('[LOGGER] Missing config, skipping send', {
-      hasUrl: !!config?.url,
-      hasUserId: !!config?.userId,
-      hasApiKey: !!config?.apiKey,
-    });
-    return;
-  }
-}
 function sanitize(obj) {
   if (!obj) return obj;
   const clone = JSON.parse(JSON.stringify(obj));
@@ -70,27 +58,40 @@ function buildLokiBody(level, type, details) {
 
 async function send(level, type, details = {}) {
   if (!config || !config.url || !config.userId || !config.apiKey) {
+    console.log('[LOGGER] Missing logging config, skipping send', {
+      hasUrl: !!config?.url,
+      hasUserId: !!config?.userId,
+      hasApiKey: !!config?.apiKey,
+    });
     return;
   }
 
   try {
     const body = buildLokiBody(level, type, sanitize(details));
 
+    // Basic auth: base64("userId:apiKey")
+    const basicToken = Buffer
+      .from(`${config.userId}:${config.apiKey}`)
+      .toString('base64');
+
     const res = await fetch(config.url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${config.userId}:${config.apiKey}`,
+        Authorization: `Basic ${basicToken}`,
       },
       body: JSON.stringify(body),
     });
 
     if (!res.ok) {
       const text = await res.text().catch(() => '');
-      console.log('Failed to send log to Grafana', text);
+      console.log('[LOGGER] Failed to send log to Grafana', res.status, text);
+    } else {
+      // You can comment this out later once you know prod works
+      // console.log('[LOGGER] Sent log to Grafana', { level, type });
     }
   } catch (err) {
-    console.log('Error sending log to Grafana', err.message);
+    console.log('[LOGGER] Error sending log to Grafana', err.message);
   }
 }
 
