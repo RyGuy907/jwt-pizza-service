@@ -1,6 +1,19 @@
 const fetch = require('node-fetch');
 const { logging: config } = require('./config');
 
+
+async function send(level, type, details = {}) {
+  console.log('[LOGGER] send called', { level, type });
+
+  if (!config || !config.url || !config.userId || !config.apiKey) {
+    console.log('[LOGGER] Missing config, skipping send', {
+      hasUrl: !!config?.url,
+      hasUserId: !!config?.userId,
+      hasApiKey: !!config?.apiKey,
+    });
+    return;
+  }
+}
 function sanitize(obj) {
   if (!obj) return obj;
   const clone = JSON.parse(JSON.stringify(obj));
