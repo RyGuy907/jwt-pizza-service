@@ -1,6 +1,15 @@
 const fetch = require('node-fetch');
 const { logging: config } = require('./config');
 
+const fetch = require('node-fetch');
+const { logging: config } = require('./config');
+
+console.log('[LOGGER INIT]', {
+  hasUrl: !!config?.url,
+  hasUserId: !!config?.userId,
+  hasApiKey: !!config?.apiKey,
+  source: config?.source,
+});
 
 function sanitize(obj) {
   if (!obj) return obj;

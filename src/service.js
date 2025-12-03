@@ -51,6 +51,13 @@ app.get('/', (req, res) => {
   });
 });
 
+app.get('/debug/log', (req, res) => {
+  logger.logError(new Error('Test error from /debug/log'), {
+    path: req.originalUrl || req.url,
+  });
+  res.json({ message: 'Sent test error log' });
+});
+
 app.use('*', (req, res) => {
   res.status(404).json({
     message: 'unknown endpoint',
