@@ -1,8 +1,6 @@
 const fetch = require('node-fetch');
 const { logging: config } = require('./config');
 
-const fetch = require('node-fetch');
-const { logging: config } = require('./config');
 
 console.log('[LOGGER INIT]', {
   hasUrl: !!config?.url,
